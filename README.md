@@ -36,7 +36,7 @@ If you trust me and my computer to be secure, add my Cachix cache to your substi
 ## Step 1 
 Procure your own Bitwig Studio install .deb, extract the .jar, patch it with the theme editor.
 
-Use ``nix hash file [filename]`` on both your .deb and patched .jar, run ``nix-store --add-fixed sha256 [filename]`` on both of them, then go to lines 71 and 77 in musicprod.nix and fill in your hashes.
+Use ``nix hash file [filename]`` on both your .deb and patched .jar, run ``nix-store --add-fixed sha256 [filename]`` on both of them, then go to lines 74 and 80 in musicprod.nix and fill in your hashes.
 
 ## Step 3
 Import wine-musicprod.nix in home-manager (or your config otherwise? I don't know). Ensure Wine or winetricks isn't installed in other ways. I suppose Nix will complain if it's necessary.
