@@ -3,8 +3,8 @@
   lib,
   ...
 }: let
-  # The most recent staging wine in nixpkgs for my system wine. Change this if you want
-  systemWine = pkgs.wineWow64Packages.stagingFull_11;
+  # The most recent stable wine in nixpkgs for my system wine. Change this if you want. Could just rune giang's fork as your system wine, too
+  systemWine = pkgs.wineWow64Packages.stableFull_11;
 
   # Wine 9.21 for stability for some plugins
   wine921 = pkgs.wineWow64Packages.yabridge;
@@ -14,16 +14,55 @@
     src = pkgs.fetchFromGitHub {
       owner = "giang17";
       repo = "wine";
-      rev = "bc035cc4260d14a199d4158d3b28ebfd0f3bdb6a";
-      hash = "sha256-fnHeCQY8ect5Z0lBUarEh4mXTvlxF0dtTncRZH121pE="; # Replace with 'got' hash
+      rev = "588c5e1942cb68d01e14bf17581a653a668ec18d";
+      hash = "sha256-eH26xBjaFyxbKorguAMx5LPsj/II8Qe7BBKR+Y7qPIQ=";
     };
+    configureFlags =
+      (oldAttrs.configureFlags or [])
+      ++ ["--enable-archs=i386,x86_64"];
+
+    buildInputs =
+      (oldAttrs.buildInputs or [])
+      ++ [
+        pkgs.pkgsi686Linux.xorg.libX11
+        pkgs.pkgsi686Linux.wayland
+        pkgs.pkgsi686Linux.libxkbcommon
+      ];
+
+    # llvm is only needed for the host; winebuild handles PE indexing itself
+    nativeBuildInputs = oldAttrs.nativeBuildInputs or [];
+
+    postInstall =
+      (oldAttrs.postInstall or "")
+      + ''
+        echo "Re-indexing Wine archives..."
+
+        # ELF archives — only x86_64-unix exists in Wine 11 wow64 mode
+        for dir in x86_64-unix i386-unix; do
+          full="$out/lib/wine/$dir"
+          [ -d "$full" ] || continue
+          find "$full" -name "*.a" -print0 \
+            | xargs -0 -r ${pkgs.binutils}/bin/ranlib
+        done
+
+        # PE import libraries — winebuild --lib re-indexes in-place
+        for arch in i386-windows x86_64-windows; do
+          dir="$out/lib/wine/$arch"
+          [ -d "$dir" ] || continue
+          echo "  indexing $arch..."
+          for a in "$dir"/*.a; do
+            [ -f "$a" ] || continue
+            $out/bin/winebuild --lib -o "$a" "$a" 2>/dev/null || true
+          done
+        done
+
+        echo "Archive indexing complete."
+      '';
 
     patches = [];
-
     prePatch = "";
   });
 
-  # The "Wine 10/11" specialized bridge
   yabridge-custom =
     (pkgs.yabridge.override {
       wine = wineGiang;
@@ -81,7 +120,6 @@
     message = "Run: nix-store --add-fixed sha256 bitwig-studio-6.0.deb";
   };
 
-  # 5. The Local Bitwig Build
   bitwig6-local = pkgs.stdenv.mkDerivation {
     pname = "bitwig-studio-local";
     version = "6.0";
@@ -108,7 +146,7 @@
     '';
   };
 
-  # 6. The FHS Safety Bubble
+  # Bitwig FHS
   bitwig-fhs = pkgs.buildFHSEnv {
     name = "bitwig-studio";
     targetPkgs = p:
@@ -240,14 +278,18 @@ in {
     yabridge-custom
   ];
 
+  # If the bitwig icon doesn't work for you:
+
   # xdg.enable = true;
-  # xdg.desktopEntries.bitwig = {
+  # xdg.desktopEntries.bitwig-studio = {
   #   name = "Bitwig Studio";
   #   exec = "bitwig-studio %U";
-  #   icon = "bitwig-studio"; # This matches the name we just created
-  #   comment = "My favorite DAW";
-  #   categories = ["AudioVideo" "AudioVideoEditing"];
   #   terminal = false;
+  #   icon = "bitwig-studio";
+  #   categories = ["AudioVideo" "Audio" "Midi"];
+  #   settings = {
+  #     StartupWMClass = "com.bitwig.BitwigStudio";
+  #   };
   # };
 
   home.sessionVariables = {

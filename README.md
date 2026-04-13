@@ -3,7 +3,7 @@ Though this is now a rock solid setup for me, don't hold me responsible for anyt
 
 I'm a total newcomer to nix and all of the code was co-written with Gemini. Please only use the contents of this repo and the binaries on Cachix, if you are fine with the risks of using vibecoded configs. I'm mostly publishing this repo for myself. Hopefully someone more competent will carry the torch for me.
 
-# Bitwig yabridge setup recipe (Updated April 7, 2026)
+# Bitwig yabridge setup recipe (Updated April 14, 2026)
 This repo contains my wine-musicprod.nix, that compiles and sets up:
 - Some kind of system Wine install
 - [Giang17's fork of Wine 11.0](https://github.com/giang17/wine/tree/d2d1-dcomp-11.0) for Serum 2
